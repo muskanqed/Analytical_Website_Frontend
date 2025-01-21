@@ -1,16 +1,26 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronRight,LayoutDashboard,Link,Calendar, BarChart2,Settings, Database} from "lucide-react";
+import {
+  BarChart,
+  Flower,
+  Calendar,
+  FileText,
+  Settings,
+  PieChart,
+  ChevronRight,
+  Bell,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
-
-const sidebarItems = [
-  { name: "Data Collection", icon: Database },
-  { name: "Links", icon: Link },
-  { name: "Analytics", icon: BarChart2 },
-  { name: "Events", icon: Calendar },
-  { name: "Settings", icon: Settings },
+const menuItems = [
+  { name: "Overview", icon: PieChart, url: "/overview" },
+  { name: "Real-time Analytics", icon: BarChart, url: "/real-time-analytics" },
+  { name: "User Flow", icon: Flower, url: "/user-flow" },
+  { name: "Events", icon: Calendar, url: "/events" },
+  { name: "Reports", icon: FileText, url: "/reports" },
+  { name: "Notifications", icon: Bell, url: "/notifications" },
+  { name: "Settings", icon: Settings, url: "/settings" },
 ];
-
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -28,46 +38,31 @@ const Sidebar = () => {
     <motion.div
       initial={{ width: 256 }}
       animate={{ width: isOpen ? 256 : 80 }}
-      className="fixed left-0 top-0 h-full border-r bg-card p-4 overflow-hidden"
+      className="relative left-0 top-0 h-screen border-r bg-card p-4 overflow-hidden"
     >
-      <div className="flex items-center gap-2 mb-8">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="text-2xl font-bold"
-        >
-          dub
-        </motion.div>
-        {isOpen && <motion.div
-          whileHover={{ scale: 1.1 }}
-          className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center"
-        >
-          M
-        </motion.div>}
-      </div>
-
       <motion.nav
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="space-y-2 mt-16"
       >
-        {sidebarItems.map((item) => {
+        {menuItems.map((item) => {
           const Icon = item.icon;
           return (
-            <motion.div
-              key={item.name}
-              variants={itemVariants}
-              whileHover={{ x: 5 }}
-              className={`p-2 rounded-lg hover:bg-accent cursor-pointer flex items-center gap-3 ${
-                item.name === "Links" ? "bg-accent" : ""
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className={isOpen ? "opacity-100" : "opacity-0"}>
-                {item.name}
-              </span>
-            </motion.div>
+            <Link to={`/dashboard${item.url}`}>
+              <motion.div
+                key={item.name}
+                variants={itemVariants}
+                whileHover={{ x: 5 }}
+                className={`p-2 rounded-lg hover:bg-accent cursor-pointer flex items-center gap-3 ${item.name === "Links" ? "bg-accent" : ""
+                  }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className={isOpen ? "opacity-100" : "opacity-0"}>
+                  {item.name}
+                </span>
+              </motion.div>
+            </Link>
           );
         })}
       </motion.nav>
