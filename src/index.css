@@ -80,3 +80,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* globals.css */
+[data-radix-popper-content-wrapper] {
+  transition: all 100ms ease;
+}
+
+input[type="password"]::-ms-reveal {
+  display: none;
+}

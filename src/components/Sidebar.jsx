@@ -1,85 +1,102 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import {
-  BarChart,
-  Flower,
-  Calendar,
-  FileText,
-  Settings,
-  PieChart,
+  ChevronLeft,
   ChevronRight,
-  Bell,
+  Home,
+  LineChart,
+  Settings,
+  Users,
+  Mail,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-
-const menuItems = [
-  { name: "Overview", icon: PieChart, url: "/overview" },
-  { name: "Real-time Analytics", icon: BarChart, url: "/real-time-analytics" },
-  { name: "User Flow", icon: Flower, url: "/user-flow" },
-  { name: "Events", icon: Calendar, url: "/events" },
-  { name: "Reports", icon: FileText, url: "/reports" },
-  { name: "Notifications", icon: Bell, url: "/notifications" },
-  { name: "Settings", icon: Settings, url: "/settings" },
-];
+import { cn } from "../lib/utils";
+import { Button } from "./ui/button";
+import { Link, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(true);
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-  };
+  const [expanded, setExpanded] = useState(true);
+  const location = useLocation();
 
-  const itemVariants = {
-    hidden: { x: -20, opacity: 0 },
-    visible: { x: 0, opacity: 1 },
-  };
+  const menuItems = [
+    { id: 1, title: "Overview", icon: Home, href: "/dashboard" },
+    { id: 2, title: "Reports", icon: LineChart, href: "/dashboard/reports" },
+    {
+      id: 3,
+      title: "Real Time Analytics",
+      icon: Users,
+      href: "/dashboard/real-time-analytics",
+    },
+    {
+      id: 7,
+      title: "Sessions",
+      icon: Users,
+      href: "/dashboard/sessions-details",
+    },
+    { id: 4, title: "Events", icon: Mail, href: "/dashboard/events" },
+    { id: 6, title: "Settings", icon: Settings, href: "/dashboard/settings" },
+  ];
 
   return (
-    <motion.div
-      initial={{ width: 256 }}
-      animate={{ width: isOpen ? 256 : 80 }}
-      className="relative left-0 top-0 h-screen border-r bg-card p-4 overflow-hidden"
+    <aside
+      className={cn(
+        "h-screen relative bg-white border-r border-gray-200 transition-all duration-300 ease-in-out",
+        expanded ? "w-64" : "w-20"
+      )}
     >
-      <motion.nav
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-2 mt-16"
+      <Button
+        onClick={() => setExpanded((prev) => !prev)}
+        className="absolute -right-3 top-6 bg-white text-black border border-gray-300 rounded-full p-1.5 hover:bg-gray-100 transition-colors"
       >
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link to={`/dashboard${item.url}`}>
-              <motion.div
-                key={item.name}
-                variants={itemVariants}
-                whileHover={{ x: 5 }}
-                className={`p-2 rounded-lg hover:bg-accent cursor-pointer flex items-center gap-3 ${item.name === "Links" ? "bg-accent" : ""
-                  }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span className={isOpen ? "opacity-100" : "opacity-0"}>
-                  {item.name}
-                </span>
-              </motion.div>
-            </Link>
-          );
-        })}
-      </motion.nav>
+        {expanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+      </Button>
 
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="absolute bottom-4 right-4 p-2 rounded-full bg-accent"
-      >
-        <motion.div
-          animate={{ rotate: isOpen ? 0 : 180 }}
-          transition={{ duration: 0.3 }}
+      <div className="p-4 h-16 flex items-center border-b border-gray-200">
+        <span
+          className={cn(
+            "ml-3 font-semibold text-gray-900 transition-opacity duration-200",
+            expanded ? "block" : "hidden"
+          )}
         >
-          <ChevronRight className="w-4 h-4" />
-        </motion.div>
-      </motion.button>
-    </motion.div>
+          Dashboard
+        </span>
+      </div>
+
+      {/* Navigation Items */}
+      <nav className="p-2 space-y-1">
+        {menuItems.map((item) => (
+          <Link to={item.href} key={item.id}>
+            <button
+              className={cn(
+                "w-full flex items-center px-3 py-2 rounded-lg transition-all duration-200",
+                location.pathname === item.href
+                  ? "bg-blue-100 text-blue-600"
+                  : "hover:bg-gray-100 group",
+                expanded ? "justify-start" : "justify-center"
+              )}
+            >
+              <item.icon
+                size={20}
+                className={cn(
+                  location.pathname === item.href
+                    ? "text-blue-600"
+                    : "text-gray-600 group-hover:text-blue-600"
+                )}
+              />
+              <span
+                className={cn(
+                  "ml-3 group-hover:text-blue-600 whitespace-nowrap transition-opacity duration-200",
+                  expanded ? "opacity-100" : "opacity-0 w-0",
+                  location.pathname === item.href
+                    ? "text-blue-600"
+                    : "text-gray-700"
+                )}
+              >
+                {item.title}
+              </span>
+            </button>
+          </Link>
+        ))}
+      </nav>
+    </aside>
   );
 };
 

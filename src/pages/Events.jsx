@@ -1,76 +1,162 @@
-
+import { useEffect, useMemo, useState, useCallback } from "react";
 import React from "react";
-import { motion } from "framer-motion";
-import {
-  LineChart,
-  Bell,
-} from "lucide-react";
+import { Activity, Fingerprint, Percent, Star } from "lucide-react";
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { useWebsite } from "../contexts/websiteContext";
+import { RecentEventsTable } from "./Dashboard";
+import { websiteService } from "../services/websiteService";
+import LoadingOverlay from "../components/ui/loadingOverlay";
+import ErrorMessage from "../components/ui/errorMessage";
 
-import { Button } from "../components/ui/button";
+const eventTypes = [
+  { value: "all", label: "All Events" },
+  { value: "click", label: "Clicks" },
+  { value: "form", label: "Form Submissions" },
+  { value: "scroll", label: "Scroll Events" },
+  { value: "custom", label: "Custom Events" },
+];
 
+export default function EventsPage() {
+  const { selectedWebsite } = useWebsite();
+  const [events, setEvents] = useState([]);
+  const [selectedType, setSelectedType] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-export default function Notifications() {
-  const notifications = [
-    {
-      id: 1,
-      title: "Traffic Spike Detected",
-      description: "Unusual traffic detected on your website",
-      time: "2 hours ago",
-      type: "alert",
-    },
-    {
-      id: 2,
-      title: "Weekly Report Available",
-      description: "Your weekly analytics report is ready",
-      time: "1 day ago",
-      type: "info",
-    },
-  ];
+  const fetchEvents = useCallback(async () => {
+    try {
+      const data = await websiteService.getEventsData(selectedWebsite.id);
+      setEvents(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Failed to load events");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedWebsite?.id]);
+
+  useEffect(() => {
+    if (!selectedWebsite?.id) return;
+    setLoading(true);
+    fetchEvents();
+  }, [selectedWebsite?.id]);
+
+  const metrics = useMemo(() => {
+    const uniqueSessions = new Set(events?.map((e) => e.sessionId)).size;
+    return [
+      {
+        title: "Total Events",
+        value: events.length,
+        icon: Activity,
+        subtitle: "+14.2% vs previous period",
+      },
+      {
+        title: "Unique Events",
+        value: uniqueSessions,
+        icon: Fingerprint,
+        subtitle: "3 new events this week",
+      },
+      {
+        title: "Conversion Rate",
+        value: "12.4%",
+        icon: Percent,
+        subtitle: "+2.8% vs previous period",
+      },
+      {
+        title: "Top Event",
+        value: "Button Click",
+        icon: Star,
+        subtitle: "1,243 occurrences",
+      },
+    ];
+  }, [events]);
+
+  if (loading) return <LoadingOverlay />;
+  if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Notifications</h1>
-        <Button variant="outline" size="sm">
-          Mark all as read
-        </Button>
-      </div>
+      <h1 className="text-2xl font-bold">Event Tracking</h1>
 
-      <div className="space-y-4">
-        {notifications.map((notification) => (
-          <motion.div
-            key={notification.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card>
-              <CardContent className="flex items-start p-4">
-                <div className="mr-4">
-                  {notification.type === "alert" ? (
-                    <Bell className="h-5 w-5 text-red-500" />
-                  ) : (
-                    <LineChart className="h-5 w-5 text-blue-500" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium">{notification.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {notification.description}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {notification.time}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+      <EventFilters
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedType={selectedType}
+        setSelectedType={setSelectedType}
+        eventTypes={eventTypes}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {metrics.map((metric, index) => (
+          <EventMetricCard key={`metric-${index}`} {...metric} />
         ))}
       </div>
+
+      <RecentEventsTable
+        title={"Filtered Events"}
+        description={"Detailed view of individual events"}
+        events={events}
+      />
     </div>
   );
 }
+
+const EventMetricCard = ({ title, value, icon: Icon, subtitle }) => (
+  <Card>
+    <CardHeader className="pb-2">
+      <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <Icon className="h-4 w-4" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-3xl font-bold">{value}</div>
+      {subtitle && (
+        <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      )}
+    </CardContent>
+  </Card>
+);
+
+const EventFilters = React.memo(
+  ({
+    searchQuery,
+    setSearchQuery,
+    selectedType,
+    setSelectedType,
+    eventTypes,
+  }) => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Input
+        placeholder="Search events..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="md:col-span-2"
+      />
+      <Select value={selectedType} onValueChange={setSelectedType}>
+        <SelectTrigger>
+          <SelectValue placeholder="Filter by type" />
+        </SelectTrigger>
+        <SelectContent>
+          {eventTypes.map((type) => (
+            <SelectItem key={type.value} value={type.value}>
+              {type.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+);

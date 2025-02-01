@@ -13,6 +13,9 @@ import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/authContext";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -20,6 +23,8 @@ const signInSchema = z.object({
 });
 
 export default function SignIn() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({ email: "", password: "" });
 
@@ -43,19 +48,17 @@ export default function SignIn() {
     }
 
     try {
-      const res = await fetch("/api/v1/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error("Failed to sign in");
-      const data = await res.json();
-      console.log(data);
-      toast("Sign in successful!");
+      const { data } = await api.post("/api/v1/users/login", formData);
+      if (data.token && data.user) {
+        login(data);
+        toast.success("Sign in successful!");
+        navigate("/dashboard");
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
       console.error(error.message);
-      toast.error("An error occurred during sign-in.");
+      toast.error(error.message || "An error occurred during sign-in.");
     }
   };
 
